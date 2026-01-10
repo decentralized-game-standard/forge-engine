@@ -137,6 +137,21 @@ This is a FOSS project—your hands can shape it:
 
 No pressure to jump in blind—lurk, think, then build when you’re ready.
 
+## Why Modularity Matters
+
+A chess set works because the pieces are separate from the board. You can swap pieces, change rules, play variants—all because the components are decoupled. That's why games survive centuries.
+
+Forge-Engine applies this to game *engines*. When your renderer is a swappable processor, your game can outlive the graphics API that powered it. When your input system is modular, it survives the death of every controller manufacturer. Modularity isn't just engineering elegance—it's *temporal resilience*.
+
+## Related Standards
+
+Forge-Engine is part of the [Decentralized Game Standard](../../.github/profile/README.md) ecosystem:
+
+| Standard | How It Relates |
+|----------|----------------|
+| [AEMS](../aems-standard/README.md) | AEMS entities flow through processors as data tokens |
+| [Stream Protocol](../stream-layer/README.md) | Processors can emit/consume Stream events for distributed work |
+
 ---
 
 ## License
