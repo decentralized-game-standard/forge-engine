@@ -1,159 +1,320 @@
-# Forge-Engine
+# GERS: Game Engine Record Standard
 
-**A Modular Game Engine Ecosystem – Version 0.1 (Conceptual) – April 10, 2025**
+**A Composable Framework for Game Engine Architecture — Version 0.2 (Conceptual) — January 2026**
 
-Welcome to **Forge-Engine**, an open-source framework for building game engines from the ground up. Forget bloated, one-size-fits-all engines—this is about crafting lean, custom systems that fit your game like a glove. Inspired by POSIX’s small-tool philosophy and powered by a colored Petri net model, Forge-Engine lets you assemble tiny, focused components into the exact engine you need, whether it’s for a retro 2D scroller or a sprawling 3D epic.
+GERS is an open standard for building game engines from modular, composable parts. It applies the POSIX philosophy—small tools, universal interfaces, piped composition—to game engine architecture.
 
-*Note: This project is highly conceptual right now. It’s a foundation—a standard to explore and build on. No code yet, just a vision waiting for contributors to hammer it into shape.*
-
----
-
-## What Is Forge-Engine?
-
-Traditional engines like Unity or Unreal throw everything at you—physics, rendering, UI—whether you need it or not. Forge-Engine flips that script. Start with nothing, then add only the pieces your game demands. It’s built on a network of small processors that handle engine tasks—like binding buffers or drawing to the screen—connected through a flexible, data-driven flow.
-
-Think of it as a toolbox for engine developers. Want a minimalist 2D renderer? Grab a few processors and wire them up. Need a full 3D pipeline with physics? Scale it out. Every component is modular, reusable, and yours to tweak.
+*Status: Conceptual. This document defines principles and schemas. No reference implementation exists yet.*
 
 ---
 
-## Why Forge-Engine?
+## Philosophy: Everything Is a Record
 
-- **No Bloat**: Include only what you need—no dead weight slowing you down.
-- **Total Control**: Swap out a renderer or input system without cracking open a monolith.
-- **Raw Performance**: Build tight, optimized engines tuned to your game’s DNA.
-- **Community-Driven**: Open-source from day one—grow it with us.
+POSIX unified operating systems with one insight: **everything is a file**. Disk, network, device, pipe—all accessed through file descriptors with `read()`, `write()`, `open()`, `close()`.
 
-This isn’t about pre-made games—it’s about crafting the machinery that powers them.
+GERS applies the same insight to game engines: **everything is a Record**.
 
----
+| POSIX | GERS |
+|-------|------|
+| File descriptor | Record |
+| Byte stream | Field |
+| Program | Processor |
+| Pipe | Place |
+| Pipeline | Network |
 
-## How It Works: The Schema
-
-Forge-Engine uses a colored Petri net model to manage data and tasks. Here’s the breakdown:
-
-### Records
-- **What**: Unique IDs for engine data containers.
-- **Example**: `record1` might hold a 3D model’s info.
-- **Purpose**: The “things” the engine tracks—neutral and game-agnostic.
-
-### Fields
-- **What**: Data tied to records—raw and simple.
-- **Example**: `record1:field_buffer` (vertex data), `record1:field_transform` (matrix).
-- **Purpose**: The payload processors work with.
-
-### Places
-- **What**: Queues where fields sit as tokens, waiting to be processed.
-- **Example**: "buffer_queue" holds vertex buffers.
-- **Purpose**: Staging areas for data flow.
-
-### Processors
-- **What**: Tiny units that do one engine job.
-- **Example**: `processor_buffer_bind` binds a buffer, `processor_draw_call` renders it.
-- **Purpose**: The workhorses—small, focused, and swappable.
-
-### Tokens
-- **What**: Fields moving through the system as data packets.
-- **Example**: `record1:field_buffer` as a token in "buffer_queue."
-- **Purpose**: Carry the data from place to processor.
-
-### Networks
-- **What**: Graphs of processors and places linked by data flows.
-- **Example**: `processor_buffer_bind → processor_draw_call` for rendering.
-- **Purpose**: Tie processors into subsystems like rendering or input.
-
-### The Flow
-1. Fields from records enter places as tokens.
-2. Processors fire when their input places have tokens, process the data, and output new tokens.
-3. Networks orchestrate this into parallel, efficient workflows.
-
-It’s a dynamic system—processors run when data’s ready, not on a rigid clock, letting you harness concurrency naturally.
+A mesh, a sound buffer, an AEMS entity, GPU state—all are Records with Fields. Processors read and write them through a uniform interface. You compose processors into networks like shell pipelines.
 
 ---
 
-## Example: Rendering a 3D Model
+## Why GERS?
 
-Here’s a conceptual rendering pipeline to show Forge-Engine in action:
+Traditional engines are monoliths. Swap the renderer? Rewrite the engine. Change physics libraries? Good luck.
 
-### Setup
-- **Record**: `record1` (a 3D model).
-- **Fields**:
-  - `record1:field_buffer` (vertex data).
-  - `record1:field_shader` (shader program).
-  - `record1:field_transform` (transformation matrix).
-
-### Places
-- "buffer_queue": For `field_buffer` tokens.
-- "shader_queue": For `field_shader` tokens.
-- "transform_queue": For `field_transform` tokens.
-- "bound_buffer_queue": Post-binding buffers.
-- "bound_shader_queue": Post-binding shaders.
-- "render_complete": Finished renders.
-
-### Processors
-- `processor_buffer_load`: Loads `field_buffer` into memory.
-- `processor_buffer_bind`: Binds `field_buffer` to the GPU.
-- `processor_shader_bind`: Attaches `field_shader`.
-- `processor_draw_call`: Draws using all three fields.
-
-### Flow
-1. `record1:field_buffer` → "buffer_queue" → `processor_buffer_load` → "buffer_queue."
-2. `processor_buffer_bind` grabs it → "bound_buffer_queue."
-3. `record1:field_shader` → "shader_queue" → `processor_shader_bind` → "bound_shader_queue."
-4. `record1:field_transform` → "transform_queue."
-5. `processor_draw_call` waits for tokens in "bound_buffer_queue," "bound_shader_queue," and "transform_queue," then renders → "render_complete."
-
-This is a barebones renderer—modular, extensible, and ready to scale.
+GERS enables:
+- **Modularity**: Swap processors without touching others
+- **Composition**: Wire processors like Unix pipes
+- **Interoperability**: Standard interfaces mean shared tooling
+- **Temporal resilience**: When OpenGL dies, swap the renderer—game survives
 
 ---
 
-## Goals and Intent
+## Core Concepts
 
-Forge-Engine aims to:
-- **Empower Developers**: Build engines your way, not the engine’s way.
-- **Optimize Performance**: Keep it lean with no forced overhead.
-- **Foster Collaboration**: Grow a FOSS ecosystem where anyone can contribute processors or networks.
+### Record
 
-It’s not about being the flashiest tool—it’s about being the most practical one for engine tinkerers and game makers.
+A handle to any engine resource. Like a file descriptor.
+
+```
+record:mesh_001       // A 3D mesh
+record:audio_buffer   // Audio samples
+record:player_entity  // An AEMS entity
+record:gpu_context    // Graphics state
+```
+
+Records are identified, not typed. Any processor can attempt to read any record—the Fields determine what's there.
+
+### Field
+
+Data attached to a Record. Like bytes in a file.
+
+```
+record:mesh_001
+  field:vertices    -> [v0, v1, v2, ...]
+  field:indices     -> [0, 1, 2, ...]
+  field:transform   -> mat4x4
+
+record:player_entity
+  field:position    -> vec3
+  field:health      -> int
+  field:inventory   -> [item_id, ...]
+```
+
+Fields are read and written by Processors. Access semantics (read-only, exclusive, versioned) are declared, not enforced by type.
+
+### Processor
+
+A unit of work that reads Fields, transforms data, writes Fields. Like a Unix program.
+
+```
+processor:physics_step
+  reads:  [position, velocity, collider]
+  writes: [position, velocity]
+  emits:  [collision_event]
+
+processor:sprite_render
+  reads:  [position, sprite, camera]
+  writes: [framebuffer]
+```
+
+Processors are:
+- **Small**: One job, done well
+- **Stateless**: All state lives in Records
+- **Declared**: Inputs/outputs specified, not hidden
+
+### Place
+
+A queue where Records wait between Processors. Like a pipe.
+
+```
+place:physics_input    // Records waiting for physics
+place:render_queue     // Records ready to render
+place:audio_pending    // Sounds to play
+```
+
+Places decouple Processors. A Processor doesn't know who produced its input or who consumes its output.
+
+### Network
+
+A composition of Processors connected via Places. Like a shell pipeline.
+
+```
+network:simple_game
+  input_processor -> input_place
+  input_place -> physics_processor -> physics_place
+  physics_place -> render_processor -> frame_output
+```
+
+Networks are declarative. The runtime schedules Processors, respects dependencies, manages timing.
 
 ---
 
-## Current State: Purely Conceptual
+## The Orchestra Model
 
-Right now, Forge-Engine is a blueprint—no code, no binaries, just ideas on paper (or pixels). This repo holds the standard’s vision, waiting for a community to breathe life into it. Think of it as a spec sheet for a dream engine—ready for prototyping, testing, and refining.
+Think of a GERS runtime like an orchestra:
 
-### What’s Next?
-- **Proof of Concept**: A minimal renderer or input system to test the Petri net model.
-- **Performance Benchmarks**: Can it hit 60 FPS with low overhead?
-- **Community Input**: Your ideas on processors, networks, or optimizations.
+| Orchestra | GERS |
+|-----------|------|
+| Conductor | Runtime scheduler |
+| Score | Network definition |
+| Instruments | Processors |
+| Sections | Subsystems (rendering, physics) |
+| Musicians | Worker threads |
+| Rehearsal marks | Sync points |
+
+The conductor (runtime) keeps time. The score (network) specifies who plays when. Each instrument (processor) plays its part without knowing the whole symphony.
+
+This is the opposite of a monolithic engine where one giant `Update()` function does everything sequentially.
 
 ---
 
-## Get Involved
+## Standard Records
 
-This is a FOSS project—your hands can shape it:
-- **Read the Docs**: Start here to grok the concept.
-- **Open an Issue**: Spot a flaw? Suggest a processor? Let’s talk.
-- **Submit a PR**: Got a prototype or a new network design? Share it.
+Like stdin (0), stdout (1), stderr (2) in POSIX, GERS defines standard Records:
 
-No pressure to jump in blind—lurk, think, then build when you’re ready.
+| Record | Purpose |
+|--------|---------|
+| `record:input` | Player input this frame |
+| `record:frame` | Output framebuffer |
+| `record:time` | Frame timing (dt, total, fixed) |
+| `record:log` | Debug/diagnostic output |
 
-## Why Modularity Matters
+Processors can rely on these existing. Games extend with their own Records.
 
-A chess set works because the pieces are separate from the board. You can swap pieces, change rules, play variants—all because the components are decoupled. That's why games survive centuries.
+---
 
-Forge-Engine applies this to game *engines*. When your renderer is a swappable processor, your game can outlive the graphics API that powered it. When your input system is modular, it survives the death of every controller manufacturer. Modularity isn't just engineering elegance—it's *temporal resilience*.
+## Concurrency Model
+
+GERS uses Petri net thinking—not as implementation, but as mental model:
+
+- **Places** are queues with tokens (Records)
+- **Transitions** are Processors that fire when inputs are ready
+- **Concurrent firing**: Processors without conflicts run in parallel
+- **Formal reasoning**: Deadlock and starvation are analyzable
+
+This shifts thinking from "sequential update loop" to "concurrent data flow." Implementations may use task graphs, ECS systems, job queues—the paradigm matters more than mechanism.
+
+---
+
+## AEMS Integration
+
+AEMS entities are Records. The mapping:
+
+| AEMS | GERS |
+|------|------|
+| Entity | A Record type |
+| State | Fields on that Record |
+| Manifestation | Which Processors apply |
+
+When a game creates an "Iron Sword":
+1. AEMS Entity defines what it *is* (universal)
+2. AEMS Manifestation defines what it *does here* (this game)
+3. GERS Record holds its runtime Fields
+4. GERS Processors read/transform/write those Fields
+
+---
+
+## Example: Minimal Game Loop
+
+```yaml
+network: minimal_2d
+
+processors:
+  - sdl_input:
+      writes: [record:input]
+      
+  - movement:
+      reads: [record:input, record:time]
+      queries: [position, velocity]
+      writes: [position]
+      
+  - sprite_render:
+      reads: [record:time]
+      queries: [position, sprite]
+      writes: [record:frame]
+      
+  - present:
+      reads: [record:frame]
+
+schedule:
+  phases:
+    - input: [sdl_input]
+    - simulate: [movement]
+    - render: [sprite_render, present]
+  timing: variable(60fps_target)
+```
+
+Four Processors. Each does one thing. The Network wires them. The runtime schedules them.
+
+---
+
+## Prototype Path
+
+| Tier | Action | You Learn |
+|------|--------|-----------|
+| 1 | Sketch a Network on paper | How Processors connect via Places |
+| 2 | Implement 3 Processors in any language | The Processor interface pattern |
+| 3 | Build a simple scheduler | How timing and dependencies work |
+| 4 | Swap one Processor for another | Modularity via declared interfaces |
+| 5 | Add an AEMS Record type | How entities flow through the system |
+
+### Tier 1: Paper Prototype
+
+Draw boxes (Processors) and circles (Places). Draw arrows for data flow. Label the Records that move through. You've designed a GERS Network.
+
+### Tier 2: Three Processors
+
+```python
+def input_processor(records):
+    records["input"].fields["keys"] = get_keyboard_state()
+
+def physics_processor(records):
+    for entity in query(records, ["position", "velocity"]):
+        entity["position"] += entity["velocity"] * records["time"].fields["dt"]
+
+def render_processor(records):
+    for entity in query(records, ["position", "sprite"]):
+        draw(entity["sprite"], entity["position"])
+```
+
+### Tier 3: Minimal Scheduler
+
+```python
+while running:
+    records["time"].fields["dt"] = clock.tick()
+    
+    for phase in network.phases:
+        for processor in phase:
+            processor(records)
+    
+    present(records["frame"])
+```
+
+---
+
+## Comparison
+
+| Approach | GERS Equivalent |
+|----------|-----------------|
+| Unity MonoBehaviour.Update() | Processor in simulate phase |
+| Unreal Tick() | Processor in simulate phase |
+| ECS System | Processor with query |
+| Godot _process() | Processor in simulate phase |
+
+GERS isn't opposed to these—it's a unifying abstraction. An ECS System *is* a Processor. A Unity component's Update() *is* a Processor. GERS just makes the composition explicit and swappable.
+
+---
+
+## Design Principles
+
+1. **Records are universal** — Everything is a Record
+2. **Processors are small** — One job, declared interface
+3. **Composition is explicit** — Networks wire Processors via Places
+4. **Timing is managed** — Runtime respects frame budgets
+5. **State is external** — Processors are stateless; state lives in Records
+
+---
 
 ## Related Standards
 
-Forge-Engine is part of the [Decentralized Game Standard](../../.github/profile/README.md) ecosystem:
+GERS is part of the [Decentralized Game Standard](../../.github/profile/README.md) ecosystem:
 
 | Standard | How It Relates |
 |----------|----------------|
-| [AEMS](../aems-standard/README.md) | AEMS entities flow through processors as data tokens |
-| [Stream Protocol](../stream-layer/README.md) | Processors can emit/consume Stream events for distributed work |
+| [AEMS](../aems/README.md) | AEMS entities are GERS Records with Fields |
+| [WOSS](../woss/README.md) | Processors can be distributed work; compensated via WOSS |
+
+---
+
+## Open Questions
+
+This is a living standard. Unresolved areas:
+
+- **Field access semantics**: How to declare read-only vs exclusive vs versioned?
+- **Network hot-reload**: Can you swap Processors at runtime?
+- **Distributed processing**: Can Processors run on different machines?
+- **Debugging**: How to trace Record flow through Networks?
+
+---
+
+## Contributing
+
+GERS is FOSS. Shape it:
+- **Discuss**: Open an issue with questions or ideas
+- **Prototype**: Build a minimal GERS runtime
+- **Document**: Improve examples and explanations
 
 ---
 
 ## License
 
-Forge-Engine is licensed under the [MIT License](LICENSE). Free to use, modify, and share—let’s make something great together.
+[MIT License](LICENSE) — Use it, extend it, share it.
