@@ -2,6 +2,10 @@
 
 **A Composable, Data-Oriented Architecture for Resilient Game Engines — Conceptual, 2026-01-14**
 
+🏠 **[Overview](https://github.com/decentralized-game-standard)** · 📦 **[AEMS](https://github.com/decentralized-game-standard/aems-standard)** · ⚡ **[WOSS](https://github.com/decentralized-game-standard/woss-standard)** · 📜 **[Ludic](https://github.com/decentralized-game-standard/ludic-standard)** · ❓ **[FAQ](https://github.com/decentralized-game-standard/.github/blob/main/profile/FAQ.md)**
+
+---
+
 Game engines are the foundational infrastructure of interactive software. Yet most are built as deeply intertwined monoliths where a change in one subsystem—renderer, physics, input—ripples into widespread breakage. Upgrading a graphics API can force a rewrite of core loops. Adding a feature risks polluting unrelated code. Performance bottlenecks hide behind inheritance hierarchies and virtual calls.
 
 This rigidity is not inevitable. It arises from design choices that favor short-term convenience over explicit control and long-term evolvability.
