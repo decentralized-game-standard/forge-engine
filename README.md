@@ -1,6 +1,6 @@
 # GERS: Game Engine Record Standard
 
-**A Composable, Data-Oriented Architecture for Resilient Game Engines — Version 0.2 (Conceptual) — January 2026**
+**A Composable, Data-Oriented Architecture for Resilient Game Engines — Conceptual, 2026-01-14**
 
 Game engines are the foundational infrastructure of interactive software. Yet most are built as deeply intertwined monoliths where a change in one subsystem—renderer, physics, input—ripples into widespread breakage. Upgrading a graphics API can force a rewrite of core loops. Adding a feature risks polluting unrelated code. Performance bottlenecks hide behind inheritance hierarchies and virtual calls.
 
