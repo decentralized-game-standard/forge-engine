@@ -2,58 +2,55 @@
 
 **A Composable, Data-Oriented Architecture for Resilient Game Engines — Version 0.2 (Conceptual) — January 2026**
 
-Game engines have become the foundational infrastructure of interactive software, yet most are built as deeply intertwined monoliths. A change in one subsystem—renderer, physics, input—often cascades into widespread breakage. Upgrading a graphics API can require rewriting core loops. Adding a new feature risks polluting unrelated code. Performance bottlenecks hide behind layers of inheritance and virtual calls.
+Game engines are the foundational infrastructure of interactive software. Yet most are built as deeply intertwined monoliths where a change in one subsystem—renderer, physics, input—ripples into widespread breakage. Upgrading a graphics API can force a rewrite of core loops. Adding a feature risks polluting unrelated code. Performance bottlenecks hide behind inheritance hierarchies and virtual calls.
 
-This is not inevitable. It stems from design choices that prioritize apparent convenience over explicit control and long-term maintainability.
+This rigidity is not inevitable. It arises from design choices that favor short-term convenience over explicit control and long-term evolvability.
 
-The Game Engine Record Standard (GERS) reimagines engine architecture through a data-flow model: every resource is a uniform Record, every operation is a small Processor that reads and writes Fields, and composition happens through explicit Networks of queued data. The result is an engine that can evolve component-by-component without systemic collapse, where mods are native extensions, and obsolescence in one layer does not doom the whole.
+GERS reimagines engine architecture as a neutral, data-flow substrate: every resource is a uniform Record, every operation is a small, stateless Processor that reads and writes Fields, and composition happens through explicit Networks of queued data. The result is an execution environment that evolves component-by-component without systemic collapse. Mods become native extensions. Obsolescence in one layer never dooms the whole. Diverse engines—from minimalist hobbyist builds to high-performance "pro" distributions—can emerge from the same standard, swapping components freely like Linux modules built by hundreds of contributors.
+
+GERS is not a rule-description language or a specific game framework. It is the standardized "hardware + kernel" layer: the runtime that transforms data efficiently, leaving game-specific behaviors (core loops, win conditions, mechanics) to be implemented in swappable Processors and described separately via complementary standards.
 
 ## Diagnosing the Monolithic Trap
 
-Modern engines like Unity and Unreal demonstrate both extraordinary capability and structural rigidity.
+Dominant engines demonstrate both power and structural fragility:
 
-- **Version Lock-In** — Projects often remain pinned to specific engine versions for years because upgrades break serialized data, plugins, or shader pipelines. Unity's 2021–2022 upgrade cycle introduced physics regressions and asset incompatibilities that forced many teams to delay or fork. Similar stories recur with every major Unreal point release: blueprint graphs, animation state machines, or material graphs subtly change behavior.
+- **Version Lock-In** — Projects stay pinned to old releases because upgrades break serialized data, plugins, or pipelines. Physics regressions, asset incompatibilities, and behavior shifts force delays or forks.
+- **Abstraction Overhead** — Deep object hierarchies and virtual dispatch fragment data layout, causing cache misses that dominate frame time. A typical update loop scatters related data across unrelated objects, forcing pointer chasing instead of contiguous streaming.
+- **Iteration Friction** — Compile times for trivial changes routinely exceed minutes, discouraging experimentation and deep optimization.
+- **Hidden Dependencies** — Subsystems entangle silently. Input might touch rendering state. A plugin overriding one behavior can corrupt another. API deprecation (DirectX 11 → 12, OpenGL's decline) requires wholesale adaptation.
+- **Modding as Afterthought** — Mods patch binaries or inject scripts, fragile against updates. Clean extension points are rare.
 
-- **Abstraction Overhead** — Object-oriented designs dominant in these engines encourage deep hierarchies and virtual dispatch. Jonathan Blow has repeatedly highlighted how this fragments data layout, causing cache misses that dominate frame time in large scenes. A typical Unity MonoBehaviour update loop scatters position, velocity, and transform data across unrelated objects, forcing the CPU to chase pointers instead of streaming contiguous arrays.
-
-- **Iteration Friction** — Compile times in C++-based engines routinely exceed minutes for trivial changes. Blow's critiques center on this: layers of headers, templates, and precompiled dependencies turn rapid prototyping into a slog, discouraging experimentation and deep optimization.
-
-- **Hidden Costs and Fragility** — Monolithic update loops entangle subsystems. Input processing might inadvertently touch rendering state. A plugin overriding one behavior can corrupt another. When APIs deprecate (DirectX 11 to 12, OpenGL's decline), the entire engine must adapt at once, stalling projects.
-
-- **Modding as Afterthought** — Mods typically patch binaries or inject scripts, fragile against updates. Skyrim's Script Extender exists precisely because Bethesda's engine offers no clean extension points.
-
-These issues compound over time. Engines accrete features to serve the widest audience, becoming harder to maintain, debug, or escape.
+These issues compound because the engine owns too much—data, behavior, and execution are fused.
 
 ## Core Insight: Data Flow Over Control Flow
 
-GERS draws from Unix's proven model—small tools reading and writing byte streams through pipes—and from data-oriented design principles that prioritize cache-efficient layouts and explicit transformations.
+GERS draws from Unix pipes and data-oriented design: small transformations applied to explicit streams of well-layout data.
 
-Everything in a GERS engine is a **Record**: an opaque handle to a bundle of typed **Fields**. A mesh, an entity, input state, or a framebuffer—all are Records. There is no inheritance hierarchy; meaning emerges from the Fields present and the Processors that interpret them.
+Everything is a **Record**: an opaque handle to a bundle of typed **Fields**. Meshes, entities, input state, framebuffers—all are Records. There is no inheritance; meaning emerges from the Fields present and the Processors that interpret them.
 
-**Processors** are stateless functions that declare inputs and outputs:
-
-- They read specific Fields from input Records.
+**Processors** are stateless functions that declare precise inputs and outputs:
+- They read or query specific Fields from Records.
 - They write or emit new Fields/Records.
-- They contain no hidden global state.
+- They contain no hidden state.
 
-**Places** are queues decoupling Producers from Consumers, enabling concurrency without locks.
+**Places** are typed queues decoupling producers from consumers, enabling safe concurrency.
 
 A **Network** declaratively wires Processors via Places, defining the engine's topology.
 
-This shifts the mental model from "objects sending messages" to "data flowing through transformations." It exposes costs explicitly—no virtual calls hiding cache thrashing, no accidental dependencies.
+This shifts the model from "objects sending messages" to "data flowing through transformations." Costs become explicit—no virtual calls masking cache thrashing, no accidental dependencies.
 
 ### Why This Enables Performance and Longevity
 
-Data-oriented layouts (arrays of structs over structs of arrays) become natural: a Processor querying all "position" and "velocity" Fields receives contiguous memory. Parallel scheduling across cores is straightforward—independent Processors fire simultaneously.
-
-Swapping subsystems is declarative: replace a DirectX Renderer Processor with a Vulkan one; the inputs (mesh Records, transform Fields) remain identical.
-
-Modding becomes integration: a mod author publishes a new Processor (e.g., advanced AI decision making) that slots into the Network at defined points.
+- **Cache Efficiency** — Processors querying related Fields (position + velocity) receive contiguous arrays naturally.
+- **Parallelism** — Independent Processors fire simultaneously across cores; the runtime manages task graphs without manual locks.
+- **Subsystem Swappability** — Replace a DirectX Renderer Processor with Vulkan; inputs/outputs remain identical.
+- **Modding as Composition** — A mod author publishes a new Processor (advanced AI, custom physics) that slots into Networks at defined points.
+- **Diverse Engines** — One minimal GERS build targets embedded devices; another optimizes for massive multiplayer; a third prioritizes high-fidelity rendering—all sharing the same Processor ecosystem.
 
 ## Technical Foundations
 
 ### Record
-An identifier referencing mutable or immutable data.
+Identifier referencing mutable or immutable data bundle.
 
 ```
 record:player_42
@@ -63,10 +60,10 @@ record:player_42
   field:inventory   -> array<record>
 ```
 
-Records carry no behavior—only data.
+Records carry data only—no embedded behavior.
 
 ### Field
-Typed values attached to Records. Access is versioned or exclusive as declared.
+Typed values attached to Records. Access is versioned or exclusive.
 
 ### Processor
 Declares read/query/write signatures.
@@ -74,39 +71,39 @@ Declares read/query/write signatures.
 ```
 processor:integrate_motion
   reads:  [time.dt]
-  queries: [position, velocity]  // all Records possessing both
+  queries: [position, velocity]
   writes: [position]
 ```
 
-Implementation is plain code operating on bulk data.
+Implementation operates on bulk data in any supported language.
 
 ### Place
-A typed queue of Records.
+Typed queue of Records decoupling phases.
 
 ```
 place:simulation_output -> place:render_input
 ```
 
 ### Network
-YAML-like declaration (runtime-agnostic):
+Runtime-agnostic declaration (YAML-like):
 
 ```yaml
 network: core_loop
   processors:
-    - input_processor    -> place:input
-    - motion_integrator  -> place:physics
-    - collision_detector -> place:events
-    - renderer           -> record:framebuffer
+    - input_capture       -> place:input_events
+    - motion_integration  -> place:physics_updates
+    - collision_response  -> place:events
+    - rendering           -> record:framebuffer
   schedule:
     - phase: input
     - phase: simulation [parallel]
     - phase: render
 ```
 
-The runtime resolves dependencies, respects timing, and parallelizes phases.
+The runtime resolves dependencies and parallelizes phases.
 
 ### Concurrency Model
-Inspired by Petri nets: Places hold tokens (Records), Processors fire when inputs available. No manual threading—runtime manages task graphs or job systems.
+Petri-net inspired: Places hold tokens (Records), Processors fire when inputs available. Runtime handles scheduling—no manual threading.
 
 ### Standard Records
 Minimal conventions for interoperability:
@@ -118,13 +115,13 @@ Minimal conventions for interoperability:
 
 ## Integration with Broader Ecosystem
 
-AEMS entities map directly to Records: the universal Entity defines expected Fields, Manifestations guide which Processors apply, State updates Fields, ownership is external.
+External entities (e.g., AEMS) map directly to Records. Manifestations guide Processor selection. Game rules described via complementary ludic structures are implemented in behavior Processors.
 
-A modder paid via WOSS might deliver a new Processor enhancing lighting for specific AEMS Manifestations.
+A modder funded externally can deliver a new Processor enhancing mechanics for specific entity types.
 
-The engine remains agnostic to persistence—Records can serialize to Nostr events or local files.
+The engine remains agnostic to persistence and higher-level rules.
 
-## Example: Simple 2D Pipeline
+## Example: Minimal 2D Pipeline
 
 ```yaml
 processors:
@@ -134,7 +131,7 @@ processors:
       reads: [record:input, record:time]
       queries: [position, velocity, controller]
       writes: [velocity]
-  - integrate:
+  - integrate_motion:
       reads: [record:time]
       queries: [position, velocity]
       writes: [position]
@@ -144,22 +141,22 @@ processors:
       writes: [record:frame]
 ```
 
-Four focused components. Replace `render_sprites` with a ray-traced variant—no other code changes.
+Four focused components. Replace `render_sprites` with a 3D ray-traced variant—no ripple effects.
 
 ## Prototype Path
 
-1. **Paper Design** — Sketch Records and Processors for a minimal game.
-2. **Single-Thread Prototype** — Implement three Processors in any language, manually sequencing them.
+1. **Paper Design** — Map Records and Processors for a tiny game.
+2. **Single-Thread Prototype** — Implement three Processors in any language, sequencing manually.
 3. **Scheduler** — Add dependency resolution and phasing.
 4. **Parallel Execution** — Introduce job system for concurrent phases.
-5. **AEMS Import** — Load an external Entity as a Record, apply a Manifestation via Processor selection.
+5. **Ecosystem Growth** — Publish Processors for community reuse; build variant engines.
 
 ## Why Pursue This Now
 
-Hardware trends favor wide, cache-coherent processing. Languages and tools increasingly support data-oriented patterns. The costs of monolithic lock-in are evident in stalled projects and abandoned engines.
+Hardware favors wide, cache-coherent designs. Tools increasingly support data-oriented patterns. The costs of monolithic lock-in are evident in stalled projects and abandoned engines.
 
-GERS is not a rejection of existing engines but a pattern for building ones that endure: explicit, measurable, replaceable.
+GERS is a pattern for engines that endure: explicit, measurable, replaceable—serving as the neutral substrate for diverse, evolving game experiences.
 
-Experiment. Question the declarations. Implement a single Processor and see how cleanly it composes.
+Experiment. Implement a single Processor. Watch how cleanly it composes.
 
 **MIT License** — Open for implementation, extension, critique.
