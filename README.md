@@ -51,6 +51,20 @@ This shifts the model from "objects sending messages" to "data flowing through t
 - **Modding as Composition** — A mod author publishes a new Processor (advanced AI, custom physics) that slots into Networks at defined points.
 - **Diverse Engines** — One minimal GERS build targets embedded devices; another optimizes for massive multiplayer; a third prioritizes high-fidelity rendering—all sharing the same Processor ecosystem.
 
+## What GERS Deliberately Excludes
+
+GERS is an execution substrate, not a game engine. Like POSIX defines OS interfaces without dictating implementation, GERS defines data-flow patterns without prescribing behavior:
+
+| Excluded | Why | Where It Belongs |
+|----------|-----|------------------|
+| **Game logic** | Protocol defines flow, not rules | Processor implementations, Ludic Structures |
+| **Specific engines** | Protocol enables composition, not distribution | Community builds, commercial offerings |
+| **Networking/multiplayer** | Protocol is local-first | Transport layers, WOSS coordination |
+| **Asset pipelines** | Protocol handles runtime, not authoring | Tool ecosystems |
+| **Scheduling algorithms** | Protocol declares topology, not execution | Runtime implementations |
+
+A GERS-conformant engine could be a minimal hobbyist runtime or a high-performance commercial product. The standard specifies the interface contract; everything else is competitive differentiation.
+
 ## Technical Foundations
 
 ### Record
