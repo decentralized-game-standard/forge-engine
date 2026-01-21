@@ -1,179 +1,146 @@
-# GERS: Game Engine Record Standard
+# RUNS: Record Update Network Processor
 
-**A Composable, Data-Oriented Architecture for Resilient Game Engines — Conceptual, 2026-01-14**
+🏠 **[Overview](https://github.com/decentralized-game-standard)** · 📦 **[AEMS](https://github.com/decentralized-game-standard/aems-standard)** · ⚡ **[WOCS](https://github.com/decentralized-game-standard/wocs-standard)** · ❓ **[FAQ](https://github.com/decentralized-game-standard/.github/blob/main/profile/FAQ.md)**
 
-🏠 **[Overview](https://github.com/decentralized-game-standard)** · 📦 **[AEMS](https://github.com/decentralized-game-standard/aems-standard)** · ⚡ **[WOSS](https://github.com/decentralized-game-standard/woss-standard)** · ❓ **[FAQ](https://github.com/decentralized-game-standard/.github/blob/main/profile/FAQ.md)**
+> **Status**: Draft / RFC  
+> **Version**: 0.1.0
 
----
+## The "Hardware" of Decentralized Gaming
 
-Game engines are the foundational infrastructure of interactive software. Yet most are built as deeply intertwined monoliths where a change in one subsystem—renderer, physics, input—ripples into widespread breakage. Upgrading a graphics API can force a rewrite of core loops. Adding a feature risks polluting unrelated code. Performance bottlenecks hide behind inheritance hierarchies and virtual calls.
+**RUNS** (Record Update Network Processor) defines the execution model for games that live forever.
 
-This rigidity is not inevitable. It arises from design choices that favor short-term convenience over explicit control and long-term evolvability.
+RUNS reimagines engine architecture as a neutral, data-flow substrate: every resource is a uniform Record, every operation is a small, stateless Processor that reads and writes Fields, and composition happens through explicit Networks of queued data. The result is an execution environment that evolves component-by-component without systemic collapse. Mods become native extensions. Obsolescence in one layer never dooms the whole. Diverse engines—from minimalist hobbyist builds to high-performance "pro" distributions—can emerge from the same standard, swapping components freely like Linux modules built by hundreds of contributors.
 
-GERS reimagines engine architecture as a neutral, data-flow substrate: every resource is a uniform Record, every operation is a small, stateless Processor that reads and writes Fields, and composition happens through explicit Networks of queued data. The result is an execution environment that evolves component-by-component without systemic collapse. Mods become native extensions. Obsolescence in one layer never dooms the whole. Diverse engines—from minimalist hobbyist builds to high-performance "pro" distributions—can emerge from the same standard, swapping components freely like Linux modules built by hundreds of contributors.
+RUNS is not a rule-description language or a specific game framework. It is the standardized "hardware + kernel" layer: the runtime that transforms data efficiently, leaving game-specific behaviors (core loops, win conditions, mechanics) to be implemented in swappable Processors and described separately via complementary standards.
 
-GERS is not a rule-description language or a specific game framework. It is the standardized "hardware + kernel" layer: the runtime that transforms data efficiently, leaving game-specific behaviors (core loops, win conditions, mechanics) to be implemented in swappable Processors and described separately via complementary standards.
+## Why RUNS?
 
-## Diagnosing the Monolithic Trap
+Current game engines are monoliths. If you build on Unity, you inherit Unity's physics, Unity's rendering assumptions, and Unity's corporate destiny. If you mod a game, you hack a compiled binary or script against a restricted API.
 
-Dominant engines demonstrate both power and structural fragility:
+RUNS unbundles the engine.
 
-- **Version Lock-In** — Projects stay pinned to old releases because upgrades break serialized data, plugins, or pipelines. Physics regressions, asset incompatibilities, and behavior shifts force delays or forks.
-- **Abstraction Overhead** — Deep object hierarchies and virtual dispatch fragment data layout, causing cache misses that dominate frame time. A typical update loop scatters related data across unrelated objects, forcing pointer chasing instead of contiguous streaming.
-- **Iteration Friction** — Compile times for trivial changes routinely exceed minutes, discouraging experimentation and deep optimization.
-- **Hidden Dependencies** — Subsystems entangle silently. Input might touch rendering state. A plugin overriding one behavior can corrupt another. API deprecation (DirectX 11 → 12, OpenGL's decline) requires wholesale adaptation.
-- **Modding as Afterthought** — Mods patch binaries or inject scripts, fragile against updates. Clean extension points are rare.
+- **Universal Modding** — A "mod" is just a new Processor wiring into the Network. It has the same privileges as the base game code.
+- **Portability** — Game logic defined as a Network running on standard Records works on any RUNS-compliant runtime (Web, Desktop, Mobile, Terminal).
+- **Permanence** — Records are serializable data. A game state can be saved, moved to a new runtime, and resumed 10 years later, even if the original "engine" executable is dust.
+- **Interoperability** — Because data shapes are standardized (via the [RUNS Standard Library](../runs-standard-library/README.md)), a "Physics Processor" from one developer can drive the "Rendering Processor" of another.
 
-These issues compound because the engine owns too much—data, behavior, and execution are fused.
+RUNS draws from Unix pipes and data-oriented design: small transformations applied to explicit streams of well-layout data.
 
-## Core Insight: Data Flow Over Control Flow
+## The Mental Model
 
-GERS draws from Unix pipes and data-oriented design: small transformations applied to explicit streams of well-layout data.
+1.  **Records**: The atoms. Generic containers of data (Entities). They have IDs and Fields. They don't have methods.
+2.  **Fields**: The state. Data attached to Records. `runs:transform`, `runs:velocity`, `aems:durability`.
+3.  **Processors**: The logic. Pure functions causing side effects. `Move(runs:transform, runs:velocity)`. Processors are stateless and interchangeable.
+4.  **Networks**: The motherboard. A graph defining how data flows between Processors.
+5.  **The Runtime**: The electricity. It loads the Network, feeds it input events, and manages the loop.
 
-Everything is a **Record**: an opaque handle to a bundle of typed **Fields**. Meshes, entities, input state, framebuffers—all are Records. There is no inheritance; meaning emerges from the Fields present and the Processors that interpret them.
-
-**Processors** are stateless functions that declare precise inputs and outputs:
-- They read or query specific Fields from Records.
-- They write or emit new Fields/Records.
-- They contain no hidden state.
-
-**Places** are typed queues decoupling producers from consumers, enabling safe concurrency.
-
-A **Network** declaratively wires Processors via Places, defining the engine's topology.
-
-This shifts the model from "objects sending messages" to "data flowing through transformations." Costs become explicit—no virtual calls masking cache thrashing, no accidental dependencies.
-
-### Why This Enables Performance and Longevity
-
-- **Cache Efficiency** — Processors querying related Fields (position + velocity) receive contiguous arrays naturally.
-- **Parallelism** — Independent Processors fire simultaneously across cores; the runtime manages task graphs without manual locks.
-- **Subsystem Swappability** — Replace a DirectX Renderer Processor with Vulkan; inputs/outputs remain identical.
-- **Modding as Composition** — A mod author publishes a new Processor (advanced AI, custom physics) that slots into Networks at defined points.
-- **Diverse Engines** — One minimal GERS build targets embedded devices; another optimizes for massive multiplayer; a third prioritizes high-fidelity rendering—all sharing the same Processor ecosystem.
-
-## What GERS Deliberately Excludes
-
-GERS is an execution substrate, not a game engine. Like POSIX defines OS interfaces without dictating implementation, GERS defines data-flow patterns without prescribing behavior:
-
-| Excluded | Why | Where It Belongs |
-|----------|-----|------------------|
-| **Game logic** | Protocol defines flow, not rules | Processor implementations, Ludic Structures |
-| **Specific engines** | Protocol enables composition, not distribution | Community builds, commercial offerings |
-| **Networking/multiplayer** | Protocol is local-first | Transport layers, WOSS coordination |
-| **Asset pipelines** | Protocol handles runtime, not authoring | Tool ecosystems |
-| **Scheduling algorithms** | Protocol declares topology, not execution | Runtime implementations |
-
-A GERS-conformant engine could be a minimal hobbyist runtime or a high-performance commercial product. The standard specifies the interface contract; everything else is competitive differentiation.
-
-## Technical Foundations
-
-### Record
-Identifier referencing mutable or immutable data bundle.
+## Example: A Simple Loop
 
 ```
-record:player_42
-  field:position    -> vec3
-  field:velocity    -> vec3
-  field:health      -> i32
-  field:inventory   -> array<record>
+[Input Event] -> (Input Processor) -> [Control Data] -> (Movement Processor) -> [Transform Data] -> (Render Processor) -> Screen
 ```
 
-Records carry data only—no embedded behavior.
+Replace (Movement Processor) with a complex Physics engine? The rest of the chain doesn't care, as long as `runs:transform` comes out the other side.
 
-### Field
-Typed values attached to Records. Access is versioned or exclusive.
+## What RUNS Enables
 
-### Processor
-Declares read/query/write signatures.
+- **WOCS Integration** — Processors can be bountied. "I need a better Pathfinding Processor for this RTS." A dev writes it. Usage fees or flat payments settle via WOCS.
+- **Diverse Engines** — One minimal RUNS build targets embedded devices; another optimizes for massive multiplayer; a third prioritizes high-fidelity rendering—all sharing the same Processor ecosystem.
 
-```
-processor:integrate_motion
-  reads:  [time.dt]
-  queries: [position, velocity]
-  writes: [position]
-```
+## What RUNS Deliberately Excludes
 
-Implementation operates on bulk data in any supported language.
+RUNS is an execution substrate, not a game engine. Like POSIX defines OS interfaces without dictating implementation, RUNS defines data-flow patterns without prescribing behavior:
 
-### Place
-Typed queue of Records decoupling phases.
+1.  **No Default Renderer**: RUNS defines *how* to pass data to a renderer, but not *which* renderer to use. (Processors wrap WGPU, Raylib, ASCII code, etc.)
+2.  **No Scripting Language**: RUNS networks *are* the script. Processors can be written in Rust, C, AssemblyScript (Wasm), etc.
+3.  **No "Game Object" Hierarchy**: There is no inheritance. There is only composition of Data Fields on Records.
+4.  **No Network Transport**: RUNS defines how specific node synchronization happens (via state diffs), not TCP/UDP implementation.
 
-```
-place:simulation_output -> place:render_input
-```
+A RUNS-conformant engine could be a minimal hobbyist runtime or a high-performance commercial product. The standard specifies the interface contract; everything else is competitive differentiation.
 
-### Network
-Runtime-agnostic declaration (YAML-like):
+## Architecture
 
-```yaml
-network: core_loop
-  processors:
-    - input_capture       -> place:input_events
-    - motion_integration  -> place:physics_updates
-    - collision_response  -> place:events
-    - rendering           -> record:framebuffer
-  schedule:
-    - phase: input
-    - phase: simulation [parallel]
-    - phase: render
-```
+To achieve universal support for all simulation types—from discrete turn-based logic (Chess, Go) to continuous high-frequency simulations (FPS, Physics)—RUNS separates the standard into three distinct layers: the Protocol (The Machine), the Standard Library (The Vocabulary), and the Ecosystem (The Logic).
 
-The runtime resolves dependencies and parallelizes phases.
+This separation removes all genre-specific assumptions (spatial, temporal, or input-based) from the core, ensuring RUNS is a truly neutral substrate for decentralized computation.
 
-### Concurrency Model
-Petri-net inspired: Places hold tokens (Records), Processors fire when inputs available. Runtime handles scheduling—no manual threading.
+### Layer 1: The RUNS Protocol ("The Machine")
+**Repository**: `runs-protocol` (Abstract Definition)
 
-### Standard Records
-Minimal conventions for interoperability:
+The Protocol is the unopinionated kernel. It defines **only** the mechanics of execution and data flow. It knows nothing about "Time", "Space", or "Input".
 
-- `record:time` — dt, elapsed, fixed_step
-- `record:input` — devices, events
-- `record:frame` — output buffer
-- `record:log` — diagnostics
+**Responsibilities**:
+- **Data Layout**: Defines the binary structure of `Record` (Entity), `Component` (Data Table), and `Archetype` (Component Set).
+- **Execution Model**: Defines the `System` (Function) signature and the `Scheduler` (Graph) rules.
+- **Query Language**: Defines how Systems request data (`Query<(&Transform, &Velocity)>`).
+- **Safety**: Defines borrowing rules to prevent race conditions (Rust-style borrow checker adapted for ECS).
 
-## Integration with Broader Ecosystem
+**Key Constraint**: The Protocol must be implementable in any language (Rust, C++, Zig, TS), but Wasm compatibility is P0.
 
-External entities (e.g., AEMS) map directly to Records. Manifestations guide Processor selection. Game rules described via complementary ludic structures are implemented in behavior Processors.
+- **Reservation**: IDs starting with `runs:` are reserved for Protocol and Standard Library usage.
 
-A modder funded externally can deliver a new Processor enhancing mechanics for specific entity types.
+### Layer 2: The RUNS Standard Library ("The Vocabulary")
+**Repository**: `runs-standard-library`
 
-The engine remains agnostic to persistence and higher-level rules.
+The Standard Library provides the **Semantic Agreement** necessary for interoperability. While the Protocol says "Here are bytes," the Standard Library says "These bytes represent a Position."
 
-## Example: Minimal 2D Pipeline
+It is a collection of standardized Components and Resources that engines *should* support to be compatible with the wider ecosystem.
 
-```yaml
-processors:
-  - capture_input:
-      writes: [record:input]
-  - apply_forces:
-      reads: [record:input, record:time]
-      queries: [position, velocity, controller]
-      writes: [velocity]
-  - integrate_motion:
-      reads: [record:time]
-      queries: [position, velocity]
-      writes: [position]
-  - render_sprites:
-      reads: [record:time]
-      queries: [position, sprite, camera]
-      writes: [record:frame]
-```
+**Content**:
+- **Core Schemas**: `runs:time` (DeltaTime, Uptime), `runs:input` (key_code, axis), `runs:lifecycle` (State).
+- **Spatial Schemas**: `runs:transform` (Position, Rotation, Scale), `runs:hierarchy` (Parent/Child).
+- **Meta Schemas**: `runs:name`, `runs:tag`.
 
-Four focused components. Replace `render_sprites` with a 3D ray-traced variant—no ripple effects.
+See [RUNS Standard Library](../runs-standard-library/README.md) for full definitions of:
+- `runs:root`
+- `runs:time`
+- `runs:transform`
+- `runs:input`
 
-## Prototype Path
+### Layer 3: The RUNS Ecosystem ("The Logic")
+**Repository**: Community / Marketplace
 
-1. **Paper Design** — Map Records and Processors for a tiny game.
-2. **Single-Thread Prototype** — Implement three Processors in any language, sequencing manually.
-3. **Scheduler** — Add dependency resolution and phasing.
-4. **Parallel Execution** — Introduce job system for concurrent phases.
-5. **Ecosystem Growth** — Publish Processors for community reuse; build variant engines.
+This is where the actual game code lives. "Engines" in the traditional sense (Unity, Godot) are actually just **Bundles** of Ecosystem implementations.
 
-## Why Pursue This Now
+**Definition**:
+An "Ecosystem Package" is a set of Systems (Logic) that:
+1. MUST target the RUNS Protocol for wiring.
+2. SHOULD read/write schemas defined in the RUNS Standard Library.
+3. MAY define its own custom Component schemas for internal logic.
 
-Hardware favors wide, cache-coherent designs. Tools increasingly support data-oriented patterns. The costs of monolithic lock-in are evident in stalled projects and abandoned engines.
+**The Power of Separation**:
+Because `std:spatial` defines `runs:transform` (the data shape), we can have competing implementers of logic:
 
-GERS is a pattern for engines that endure: explicit, measurable, replaceable—serving as the neutral substrate for diverse, evolving game experiences.
+- **Package A (simple-mover)**: Reads `std:input`, Writes `runs:transform`. (Directly modifies position).
+- **Package B (rigid-body-physics)**: Reads `runs:transform`, Calculates Forces, Writes `runs:transform`.
+
+A user can swap Package A for Package B. The "Game Object" (Record) does not change; it still just has a `runs:transform`. The behavior changes, but the data remains standard.
+
+## Integration with Standards
+
+| Standard | Role | RUNS Relationship |
+| :--- | :--- | :--- |
+| **AEMS** | The "Matter" (Asset Definitions) | RUNS engines ingest AEMS Entities as Records. |
+| **Ludic** | The "Blueprint" (Game Rules) | RUNS Processors implement the verbs defined in Ludic structures. |
+| **WOCS** | The "Economy" (Settlement) | RUNS development (Processors) is funded/settled via WOCS. |
+
+## Comparison
+
+| Feature | Unity/Unreal | Bevy/Flecs | RUNS |
+| :--- | :--- | :--- | :--- |
+| **Architecture** | Monolithic (OOP + Components) | ECS (Code-First) | Data-First Protocol |
+| **Interop** | None (Closed Eco) | Binary/Language locked | Universal Data Shape |
+| **Modding** | Scripting API (Restricted) | Plugin (Compile time) | Network Injection (Runtime) |
+| **Networking/multiplayer** | Platform services | Library specific | Protocol is local-first |
+| **Monetization** | Asset Store (Closed) | GitHub Sponsors | WOCS (Open Market) |
+
+## Summary
+
+**RUNS** is the socket.
+**AEMS** is the bulb.
+**WOCS** is the electricity bill.
+
+RUNS is a pattern for engines that endure: explicit, measurable, replaceable—serving as the neutral substrate for diverse, evolving game experiences.
 
 Experiment. Implement a single Processor. Watch how cleanly it composes.
 
