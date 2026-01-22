@@ -44,7 +44,7 @@ Replace (Movement Processor) with a complex Physics engine? The rest of the chai
 
 ## What RUNS Enables
 
-- **WOCS Integration** — Processors can be bountied. "I need a better Pathfinding Processor for this RTS." A dev writes it. Usage fees or flat payments settle via WOCS.
+- **WOCS Integration** — Processor development can be coordinated via bounties. "I need a better Pathfinding Processor for this RTS." A dev writes it. Work is settled instantly via WOCS.
 - **Diverse Engines** — One minimal RUNS build targets embedded devices; another optimizes for massive multiplayer; a third prioritizes high-fidelity rendering—all sharing the same Processor ecosystem.
 
 ## What RUNS Deliberately Excludes
@@ -122,7 +122,7 @@ A user can swap Package A for Package B. The "Game Object" (Record) does not cha
 | :--- | :--- | :--- |
 | **AEMS** | The "Matter" (Asset Definitions) | RUNS engines ingest AEMS Entities as Records. |
 | **Ludic** | The "Blueprint" (Game Rules) | RUNS Processors implement the verbs defined in Ludic structures. |
-| **WOCS** | The "Economy" (Settlement) | RUNS development (Processors) is funded/settled via WOCS. |
+| **WOCS** | The "Coordination" (Ecosystem Services) | Server hosting, anti-cheat bounties, and Processor development are coordinated via WOCS. |
 
 ## Comparison
 
@@ -132,13 +132,13 @@ A user can swap Package A for Package B. The "Game Object" (Record) does not cha
 | **Interop** | None (Closed Eco) | Binary/Language locked | Universal Data Shape |
 | **Modding** | Scripting API (Restricted) | Plugin (Compile time) | Network Injection (Runtime) |
 | **Networking/multiplayer** | Platform services | Library specific | Protocol is local-first |
-| **Monetization** | Asset Store (Closed) | GitHub Sponsors | WOCS (Open Market) |
+| **Monetization** | Asset Store (Closed) | GitHub Sponsors | WOCS (Direct Coordination) |
 
 ## Summary
 
 **RUNS** is the socket.
 **AEMS** is the bulb.
-**WOCS** is the electricity bill.
+**WOCS** is the coordination layer for upkeep—server hosting, anti-cheat, provenance audits.
 
 RUNS is a pattern for engines that endure: explicit, measurable, replaceable—serving as the neutral substrate for diverse, evolving game experiences.
 
